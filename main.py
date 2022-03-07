@@ -1,10 +1,11 @@
-import datetime
 import re
 import time
 from collections import OrderedDict
 
 import requests
 import tweepy
+from loguru import logger
+import sys
 
 API_KEY = "R5ynUeOq4FpX5Yg3TzCQo8W8I"
 API_KEY_SECRET = "JGvdkpYmZI7BHg4cdeY2Xa6ekDXRLfXhWvKV8wxkb4StuL9RhI"
@@ -18,6 +19,7 @@ class Bot:
         self.client = tweepy.Client(BEARER_TOKEN)
         self.target_user = "ReyesClothes"
         self.webhook = "https://discord.com/api/webhooks/950507477328355370/k8DzcOQmR4zVVNFNJtYhGZDR7DfKjps6tRtVIzQyKcMIfI27pJm2BsziZUalA1mAl-Nr"
+        logger.add(sys.stderr, format="{time} {level} {message}", filter="reyes", level="INFO")
 
         self.run()
 
@@ -28,6 +30,7 @@ class Bot:
 
     def check_codes(self, tweet):
         current_tweet = tweet.id
+        logger.info(f"Found tweet {current_tweet}")
         if current_tweet == self.last_tweet:
             return None
         text = tweet.text
@@ -41,10 +44,10 @@ class Bot:
                 codes[pourcentage] = code.group(0)
                 
         self.last_tweet = current_tweet
+        logger.info(f"Found {len(codes)} codes for tweet {current_tweet}")
         return OrderedDict(sorted(codes.items(), key=lambda t: t[0], reverse=True))
 
     def send_message(self, codes):
-        now = datetime.datetime.now().strftime("%Y-%m-%YT%H:%M:%S")
 
         message_codes = ""
         for code in codes:
@@ -79,6 +82,7 @@ class Bot:
         }
 
         requests.post(self.webhook, json=content)
+        logger.info(f"Sent message to Discord")
 
     def run(self):
         while True:
